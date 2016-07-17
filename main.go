@@ -1,0 +1,143 @@
+package main
+
+import (
+	json "encoding/json"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/Pallinder/go-randomdata"
+)
+
+var counter int = 1
+
+func printlog(msg string, increase bool) {
+	log.Print(strconv.Itoa(counter) + ". - " + msg)
+	if increase {
+		counter++
+	}
+
+}
+
+func main() {
+	//Running the tests now
+
+	//Signup
+	printlog("Attempting signup", false)
+	username, err := signup()
+
+	if err != nil {
+		printlog("Signup failed: "+err.Error(), false)
+		panic(err)
+	}
+	printlog("Signup success: "+username, false)
+
+	printlog("Attempting login", true)
+
+	username, err = login(username)
+	if err != nil {
+		printlog("Login failed: "+err.Error(), false)
+		panic(err)
+	}
+
+	//Login
+
+	//List tasks
+
+	//Creates tasks
+
+	//Completes tasks
+
+}
+
+func sendRequest(method string, endpoint string, headers map[string]string, data string) (*http.Response, error) {
+	client := &http.Client{}
+
+	fullURL := GatewayHost + GatewayPort + endpoint
+
+	req, err := http.NewRequest(method, fullURL, strings.NewReader(data))
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(req)
+}
+
+const password string = "123456"
+
+var defaultHeaders map[string]string = map[string]string{"Content-type": "application/json"}
+
+var token *Token
+
+type LoginUser struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type SignupUser struct {
+	Name string `json:"name"`
+	LoginUser
+}
+
+type Token struct {
+	Token     string    `json:"token"`
+	UserId    string    `json:"userId"`
+	Ttl       int       `json:"ttl"`
+	CreatedOn time.Time `json:"createdOn"`
+}
+
+func signup() (string, error) {
+	username := randomdata.Adjective() + randomdata.FirstName(randomdata.Male)
+	user := SignupUser{
+		Name: randomdata.FullName(randomdata.Male),
+		LoginUser: LoginUser{
+			Username: username,
+			Password: password,
+		},
+	}
+
+	data, err := json.Marshal(user)
+	if err != nil {
+		return username, err
+	}
+	printlog("Will send "+string(data), false)
+
+	res, err := sendRequest("POST", "/users/signup", defaultHeaders, string(data))
+	if err != nil {
+		return username, err
+	}
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&token)
+	if err != nil {
+		return username, err
+	}
+
+	return username, nil
+}
+
+func login(username string) (string, error) {
+	user := LoginUser{
+		Username: username,
+		Password: password,
+	}
+	data, err := json.Marshal(user)
+	if err != nil {
+		return username, err
+	}
+	res, err := sendRequest("POST", "/users/login", defaultHeaders, string(data))
+	if err != nil {
+		return username, err
+	}
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&token)
+	if err != nil {
+		return username, err
+	}
+
+	return username, nil
+
+}
