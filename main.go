@@ -25,6 +25,12 @@ func printlog(msg string, increase bool) {
 
 func main() {
 	if len(os.Args) > 1 || StartTesting {
+		printlog("ENV", false)
+
+		printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
+		printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
+		printlog("SMOKING TESTING SERVER", false)
+		smokeTest(10, 3)
 		printlog("STARTING TESTS", false)
 		startTests()
 	} else {
@@ -35,12 +41,24 @@ func main() {
 
 }
 
+func smokeTest(attempts int, sleep int64) {
+	passed := false
+	for total := 0; total < attempts; total++ {
+		_, err := sendRequest("GET", "/", defaultHeaders, "")
+		if err == nil {
+			passed = true
+			break
+		}
+		time.Sleep(time.Second * time.Duration(sleep))
+	}
+	if !passed {
+		panic(fmt.Sprintf("DIDNT PASS THE SMOKE TEST AFTER %d attempts", attempts))
+	}
+
+}
+
 func startTests() {
 	//Running the tests now
-	printlog("Environment variables", true)
-
-	printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
-	printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
 
 	//Signup
 	printlog("Attempting signup", true)
