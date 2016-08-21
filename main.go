@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,8 +24,20 @@ func printlog(msg string, increase bool) {
 }
 
 func main() {
+	if len(os.Args) > 1 || StartTesting {
+		printlog("STARTING TESTS", false)
+		startTests()
+	} else {
+		for true {
+
+		}
+	}
+
+}
+
+func startTests() {
 	//Running the tests now
-	printlog("Environment variables", false)
+	printlog("Environment variables", true)
 
 	printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
 	printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
@@ -39,8 +52,8 @@ func main() {
 	}
 	printlog("Signup success: "+username, false)
 
+	//Login
 	printlog("Attempting login", true)
-
 	username, err = login(username)
 	if err != nil {
 		printlog("Login failed: "+err.Error(), false)
@@ -49,14 +62,11 @@ func main() {
 
 	printlog("Login success: "+username, false)
 
-	//Login
-
 	//List tasks
 
 	//Creates tasks
 
 	//Completes tasks
-
 }
 
 func sendRequest(method string, endpoint string, headers map[string]string, data string) (*http.Response, error) {
