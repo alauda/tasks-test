@@ -2,6 +2,7 @@ package main
 
 import (
 	json "encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,18 +15,22 @@ import (
 var counter int = 1
 
 func printlog(msg string, increase bool) {
-	log.Print(strconv.Itoa(counter) + ". - " + msg)
 	if increase {
 		counter++
+		log.Print("------------------------------------")
 	}
-
+	log.Print(strconv.Itoa(counter) + ". - " + msg)
 }
 
 func main() {
 	//Running the tests now
+	printlog("Environment variables", false)
+
+	printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
+	printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
 
 	//Signup
-	printlog("Attempting signup", false)
+	printlog("Attempting signup", true)
 	username, err := signup()
 
 	if err != nil {
@@ -41,6 +46,8 @@ func main() {
 		printlog("Login failed: "+err.Error(), false)
 		panic(err)
 	}
+
+	printlog("Login success: "+username, false)
 
 	//Login
 
