@@ -13,7 +13,7 @@ func getHostValueOrDefault(key string, defaultVal string) string {
 }
 
 var (
-	GatewayPort       = ":" + getHostValueOrDefault("PORT", "80")
-	GatewayHost       = getHostValueOrDefault("IP_ADDRESS", "")
+	GatewayPort       = ":" + getHostValueOrDefault("GATEWAY_PORT_27017_TCP_PORT", getHostValueOrDefault("PORT", "80"))
+	GatewayHost       = getHostValueOrDefault("GATEWAY_PORT_27017_TCP_ADDR", getHostValueOrDefault("IP_ADDRESS", ""))
 	StartTesting bool = getHostValueOrDefault("TEST", "") != ""
 )
