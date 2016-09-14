@@ -26,6 +26,10 @@ func printlog(msg string, increase bool) {
 func main() {
 	if len(os.Args) > 1 || StartTesting {
 		printlog("ENV", false)
+		for _, ts := range os.Environ() {
+			printlog(ts, false)
+			printlog(fmt.Sprintf("%v: %v", ts, os.Getenv(ts)), false)
+		}
 
 		printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
 		printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
