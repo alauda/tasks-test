@@ -26,33 +26,26 @@ func printlog(msg string, increase bool) {
 var FinalURL string
 
 func main() {
-	if len(os.Args) > 1 || StartTesting {
-		printlog("ENV", false)
-		for _, ts := range os.Environ() {
-			printlog(ts, false)
-		}
-
-		printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
-		printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
-		printlog(fmt.Sprintf("%v: %v", "ENDPOINT", Endpoint), false)
-		FinalURL = "http://" + TestURL
-		printlog(fmt.Sprintf("%v: %v", "FinalURL", FinalURL), false)
-		printlog("SMOKING TESTING SERVER", false)
-		smokeTest(10, 3)
-		printlog("STARTING TESTS", false)
-		startTests()
-	} else {
-		for true {
-
-		}
+	printlog("ENV", false)
+	for _, ts := range os.Environ() {
+		printlog(ts, false)
 	}
 
+	printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
+	printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
+	printlog(fmt.Sprintf("%v: %v", "ENDPOINT", Endpoint), false)
+	FinalURL = "http://" + TestURL
+	printlog(fmt.Sprintf("%v: %v", "FinalURL", FinalURL), false)
+	printlog("SMOKING TESTING SERVER", false)
+	smokeTest(10, 5)
+	printlog("STARTING TESTS", false)
+	startTests()
 }
 
 func smokeTest(attempts int, sleep int64) {
 	passed := false
 	for total := 0; total < attempts; total++ {
-		_, err := sendRequest("GET", "/", defaultHeaders, "")
+		_, err := sendRequest("GET", "/health", defaultHeaders, "")
 		if err == nil {
 
 			passed = true
