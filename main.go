@@ -23,16 +23,20 @@ func printlog(msg string, increase bool) {
 	log.Print(strconv.Itoa(counter) + ". - " + msg)
 }
 
+var FinalURL string
+
 func main() {
 	if len(os.Args) > 1 || StartTesting {
 		printlog("ENV", false)
 		for _, ts := range os.Environ() {
 			printlog(ts, false)
-			printlog(fmt.Sprintf("%v: %v", ts, os.Getenv(ts)), false)
 		}
 
 		printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
 		printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
+		printlog(fmt.Sprintf("%v: %v", "ENDPOINT", Endpoint), false)
+		FinalURL = "http://" + TestURL
+		printlog(fmt.Sprintf("%v: %v", "FinalURL", FinalURL), false)
 		printlog("SMOKING TESTING SERVER", false)
 		smokeTest(10, 3)
 		printlog("STARTING TESTS", false)
@@ -50,8 +54,11 @@ func smokeTest(attempts int, sleep int64) {
 	for total := 0; total < attempts; total++ {
 		_, err := sendRequest("GET", "/", defaultHeaders, "")
 		if err == nil {
+
 			passed = true
 			break
+		} else {
+			fmt.Println("Smoke test error ", err)
 		}
 		time.Sleep(time.Second * time.Duration(sleep))
 	}
@@ -95,6 +102,13 @@ func sendRequest(method string, endpoint string, headers map[string]string, data
 	client := &http.Client{}
 
 	fullURL := GatewayHost + GatewayPort + endpoint
+	if FinalURL != "" {
+		fullURL = FinalURL + endpoint
+		fmt.Println("FinalURL ", fullURL)
+	} else if Endpoint != "" {
+		fullURL = Endpoint + endpoint
+		fmt.Println("New endpoint ", fullURL)
+	}
 
 	req, err := http.NewRequest(method, fullURL, strings.NewReader(data))
 	for key, value := range headers {
