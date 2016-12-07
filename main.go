@@ -3,10 +3,8 @@ package main
 import (
 	json "encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,23 +16,54 @@ var counter int = 1
 func printlog(msg string, increase bool) {
 	if increase {
 		counter++
-		log.Print("------------------------------------")
+		println("------------------------------------")
 	}
-	log.Print(strconv.Itoa(counter) + ". - " + msg)
+	println(counter, ". - ", msg)
+}
+
+func getEnvName(name, proto, port string) string {
+	return fmt.Sprintf("%s_PORT_%s_%s", name, port, proto)
 }
 
 var FinalURL string
 
 func main() {
+
+	all := os.Args
+	println("args")
+	println(all)
+	name := "GATEWAY"
+	proto := "HTTP"
+	port := "80"
+	if len(all) > 1 {
+		name = strings.ToUpper(all[1])
+	}
+	if len(all) > 2 {
+		proto = strings.ToUpper(all[2])
+	}
+	if len(all) > 3 {
+		port = strings.ToUpper(all[3])
+	}
+
 	printlog("ENV", false)
 	for _, ts := range os.Environ() {
 		printlog(ts, false)
 	}
 
-	printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
-	printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
-	printlog(fmt.Sprintf("%v: %v", "ENDPOINT", Endpoint), false)
-	FinalURL = "http://" + TestURL
+	envName := getEnvName(name, proto, port)
+	println(" will use this one here: ", envName)
+
+	if proto != "HTTP" {
+		println("Changing the protocol because this is a http server...")
+		FinalURL = "http://" + os.Getenv(envName+"_ADDR")
+	} else {
+		FinalURL = os.Getenv(envName)
+	}
+
+	// printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
+	// printlog(fmt.Sprintf("%v: %v", "PORT", GatewayPort), false)
+	// printlog(fmt.Sprintf("%v: %v", "ENDPOINT", Endpoint), false)
+
 	printlog(fmt.Sprintf("%v: %v", "FinalURL", FinalURL), false)
 	printlog("SMOKING TESTING SERVER", false)
 	smokeTest(10, 5)
