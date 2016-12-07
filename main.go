@@ -44,6 +44,10 @@ func main() {
 	if len(all) > 3 {
 		port = strings.ToUpper(all[3])
 	}
+	shouldEx := false
+	if len(all) > 4 {
+		shouldEx = true
+	}
 
 	printlog("ENV", false)
 	for _, ts := range os.Environ() {
@@ -68,6 +72,10 @@ func main() {
 	printlog("SMOKING TESTING SERVER", false)
 	smokeTest(10, 5)
 	printlog("STARTING TESTS", false)
+	if shouldEx {
+		println("will quit by command", shouldEx)
+		os.Exit(0)
+	}
 	startTests()
 }
 
