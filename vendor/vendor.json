@@ -1,6 +1,13 @@
 {
 	"comment": "",
 	"ignore": "test",
-	"package": [],
+	"package": [
+		{
+			"checksumSHA1": "mwB+SBEBf06n2hoReZ8C3qg5+cc=",
+			"path": "github.com/Pallinder/go-randomdata",
+			"revision": "6fc9e945968728bdf662e5a9f2d4b97f5a24dd03",
+			"revisionTime": "2016-10-21T13:40:32Z"
+		}
+	],
 	"rootPath": "tasks-test"
 }
