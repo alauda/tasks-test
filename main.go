@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Pallinder/go-randomdata"
+	randomdata "github.com/Pallinder/go-randomdata"
 )
 
 var counter int = 1
@@ -62,6 +62,9 @@ func main() {
 		FinalURL = "http://" + os.Getenv(envName+"_ADDR")
 	} else {
 		FinalURL = os.Getenv(envName)
+		if port == "80" {
+			FinalURL = strings.Replace(FinalURL, ":80", "", -1)
+		}
 	}
 
 	// printlog(fmt.Sprintf("%v: %v", "IP_ADDRESS", GatewayHost), false)
