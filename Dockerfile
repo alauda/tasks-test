@@ -1,4 +1,4 @@
-FROM golang:1.7
+FROM index.alauda.cn/library/golang:1.7
 
 COPY . /go/src/app
 
