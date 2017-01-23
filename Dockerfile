@@ -1,3 +1,9 @@
-FROM golang:1.6.2-onbuild
+FROM golang:1.7
+
+COPY . /go/src/app
+
+WORKDIR /go/src/app
+
+RUN go install
 
 CMD ["/go/bin/app"]
