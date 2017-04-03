@@ -2,6 +2,7 @@ package main
 
 import (
 	json "encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,7 +19,7 @@ func printlog(msg string, increase bool) {
 		counter++
 		println("------------------------------------")
 	}
-	println(counter, ". - ", msg)
+	println(counter, "-", msg)
 }
 
 func getEnvName(name, proto, port string) string {
@@ -125,10 +126,116 @@ func startTests() {
 	printlog("Login success: "+username, false)
 
 	//List tasks
+	printlog("Checking tasks list, should be empty", true)
+	tasks, err := getTaskList()
+	if err != nil {
+		printlog("Task list failed: "+err.Error(), false)
+		panic(err)
+	}
+
+	if tasks == nil || len(tasks) != 0 {
+		printlog(fmt.Sprintf("Invalid list. Should be empty but not nil: %v", tasks), false)
+		panic(errors.New("invalid list"))
+	}
 
 	//Creates tasks
+	printlog("Creating a few tasks...", true)
+	newTasks := make([]*Task, 3)
+	for i := range newTasks {
+		name := randomdata.Street()
+		printlog(fmt.Sprintf("Creating task: %s", name), false)
+		newTasks[i], err = createTask(name)
+		if err != nil {
+			printlog(fmt.Sprintf("Creating task err: %v", err), false)
+			panic(err)
+		}
+		if newTasks[i] == nil {
+			printlog(fmt.Sprintf("Creating task issue: Task is nil"), false)
+			panic(errors.New("task is new"))
+		}
+		if newTasks[i].Name != name {
+			printlog(fmt.Sprintf("Creating task issue: Task name is not the same: %s != %s", name, newTasks[i].Name), false)
+			panic(errors.New("task name is not the same"))
+		}
+	}
 
-	//Completes tasks
+	printlog("Fetching the list to compare again...", true)
+	tasks, err = getTaskList()
+	if err != nil {
+		printlog("Task list failed: "+err.Error(), false)
+		panic(err)
+	}
+
+	if len(tasks) != len(newTasks) {
+		printlog(fmt.Sprintf("Creating task issue: Task list size is not the same: %v != %v", tasks, newTasks), false)
+		panic(errors.New("list size is not the same"))
+	}
+
+	for _, task := range newTasks {
+		found := false
+		for _, t := range tasks {
+			if task.ID == t.ID {
+				found = true
+				if task.Name != t.Name || task.Done != t.Done {
+					printlog(fmt.Sprintf("Tasks are different: %v != %v", task, t), false)
+					panic(errors.New("task not the same"))
+				}
+				// preparing for update
+				task.Name = randomdata.Street()
+				t.Name = task.Name
+				t.Done = true
+				task.Done = true
+			}
+		}
+		if !found {
+			printlog(fmt.Sprintf("Task not found: %v", task), false)
+			panic(errors.New("list not found"))
+		}
+	}
+
+	// Updating tasks
+	printlog("Updating tasks...", true)
+	for i, task := range tasks {
+		tasks[i], err = updateTask(task.ID, task.Name, task.Done)
+		if err != nil {
+			printlog("Task update failed: "+err.Error(), false)
+			panic(err)
+		}
+	}
+
+	printlog("Fetching the list to compare again...", true)
+	tasks, err = getTaskList()
+	if err != nil {
+		printlog("Task list failed: "+err.Error(), false)
+		panic(err)
+	}
+
+	if len(tasks) != len(newTasks) {
+		printlog(fmt.Sprintf("Creating task issue: Task list size is not the same: %v != %v", tasks, newTasks), false)
+		panic(errors.New("list size is not the same"))
+	}
+
+	for _, task := range newTasks {
+		found := false
+		for _, t := range tasks {
+			if task.ID == t.ID {
+				found = true
+				if task.Name != t.Name || task.Done != t.Done {
+					printlog(fmt.Sprintf("Tasks are different: %v != %v", task, t), false)
+					panic(errors.New("task not the same"))
+				}
+				// preparing for update
+				task.Name = randomdata.Street()
+				t.Name = task.Name
+				t.Done = true
+				task.Done = true
+			}
+		}
+		if !found {
+			printlog(fmt.Sprintf("Task not found: %v", task), false)
+			panic(errors.New("list not found"))
+		}
+	}
 }
 
 func sendRequest(method string, endpoint string, headers map[string]string, data string) (*http.Response, error) {
@@ -137,15 +244,17 @@ func sendRequest(method string, endpoint string, headers map[string]string, data
 	fullURL := GatewayHost + GatewayPort + endpoint
 	if FinalURL != "" {
 		fullURL = FinalURL + endpoint
-		fmt.Println("FinalURL ", fullURL)
 	} else if Endpoint != "" {
 		fullURL = Endpoint + endpoint
-		fmt.Println("New endpoint ", fullURL)
 	}
+	fmt.Println("[", method, "]", fullURL)
 
 	req, err := http.NewRequest(method, fullURL, strings.NewReader(data))
 	for key, value := range headers {
 		req.Header.Add(key, value)
+	}
+	if token != nil && len(token.Token) > 0 {
+		req.Header.Add("Authorization", token.Token)
 	}
 	if err != nil {
 		return nil, err
@@ -202,6 +311,8 @@ func signup() (string, error) {
 		return username, err
 	}
 
+	println("token", token)
+
 	return username, nil
 }
 
@@ -224,6 +335,64 @@ func login(username string) (string, error) {
 		return username, err
 	}
 
+	println("token", token)
+
 	return username, nil
 
+}
+
+type Task struct {
+	ID        string    `json:"_id"`
+	UserID    string    `json:"userid"`
+	Name      string    `json:"name"`
+	CreatedOn time.Time `json:"createdon"`
+	Done      bool      `json:"done"`
+}
+
+func getTaskList() ([]*Task, error) {
+
+	res, err := sendRequest("GET", "/tasks", defaultHeaders, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var tasks []*Task
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&tasks)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func createTask(name string) (*Task, error) {
+	task := &Task{Name: name}
+	data, err := json.Marshal(task)
+	res, err := sendRequest(http.MethodPost, "/tasks", defaultHeaders, string(data))
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&task)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func updateTask(id, name string, done bool) (*Task, error) {
+	task := &Task{ID: id, Name: name, Done: done}
+	data, err := json.Marshal(task)
+	res, err := sendRequest(http.MethodPut, "/tasks", defaultHeaders, string(data))
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&task)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
 }
